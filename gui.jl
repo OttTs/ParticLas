@@ -113,8 +113,7 @@ function setup_display(scene::Scene, gui::GUI)
 
     window = Scene(
         scene,
-        px_area=area,
-        backgroundcolor=:white
+        px_area=area
     )
 
     campixel!(window)
@@ -218,15 +217,9 @@ end
 function setup_settings(scene::Scene, gui::GUI)
     px, py = 2 .* GLFW.standard_screen_resolution()
     area = Rect(floor(Int64, px * (1 - MENU_WIDTH)), 0, ceil(Int64, px * MENU_WIDTH), py)
-    window = Scene(
-        scene,
-        px_area=area,
-        clear=true,
-        backgroundcolor=RGBf(0.8, 0.8, 0.8),
-        camera=scene.camera
-    )
 
-    layout = GridLayout(window)
+    Box(scene, bbox=area, color=RGBf(0.8, 0.8, 0.8))
+    layout = GridLayout(scene, bbox=area)
     layout.parent = scene
 
     Label(layout[1,1], STRING_CONDITIONS, fontsize=20, halign=:left)
@@ -264,7 +257,7 @@ function setup_settings(scene::Scene, gui::GUI)
 
     menu = Menu(
         layout[7,1],
-        dropdown_arrow_size = 40,
+        dropdown_arrow_size = 20,
         options = [STRING_PARTICLE, STRING_DENSITY, STRING_VELOCITY, STRING_TEMPERATURE],
         default = DEFAULT_VIEW
     )

@@ -1,6 +1,7 @@
 const LANG_ENGLISH = true # Set true to use english labels, otherwise german
 
 if LANG_ENGLISH
+    const STRING_ParticLas = "ParticLas"
     const STRING_HEIGHT = "Height"
     const STRING_PARTICLE = "Particles"
     const STRING_VELOCITY = "Velocity"
@@ -13,6 +14,7 @@ if LANG_ENGLISH
     const STRING_REFLECTIVE = "Reflective"
     const STRING_VIEW = "View"
 else
+    const STRING_ParticLas = "ParticLas"
     const STRING_HEIGHT = "Flughöhe"
     const STRING_PARTICLE = "Partikel"
     const STRING_VELOCITY = "Geschwindigkeit"
@@ -229,6 +231,8 @@ function setup_settings(scene::Scene, gui::GUI)
     layout = GridLayout(window)
     layout.parent = scene
 
+    Label(layout[0,1], STRING_ParticLas, fontsize=50, halign=:center)
+
     Label(layout[1,1], STRING_CONDITIONS, fontsize=20, halign=:left)
 
     slidergrid = SliderGrid(
@@ -285,6 +289,18 @@ function setup_settings(scene::Scene, gui::GUI)
     resetbutton =  Button(
         layout[9, 1],
         label = "Reset",
+        #buttoncolor = RGBf(1., 0.6, 0.6),
+        #buttoncolor_hover = RGBf(1., 0.8, 0.8),
+        #buttoncolor_active = RGBf(1., 0.2, 0.2),
+        cornerradius = 4,
+        cornersegments = 10,
+        height=50,
+        width=200
+    )
+
+    closebutton = Button(
+        layout[10, 1],
+        label = "Close",
         buttoncolor = RGBf(1., 0.6, 0.6),
         buttoncolor_hover = RGBf(1., 0.8, 0.8),
         buttoncolor_active = RGBf(1., 0.2, 0.2),
@@ -294,9 +310,10 @@ function setup_settings(scene::Scene, gui::GUI)
         width=200
     )
 
-    rowgap!(layout, 3, 50)
-    rowgap!(layout, 5, 50)
-    rowgap!(layout, 7, 100)
+    rowgap!(layout, 1, 100)
+    rowgap!(layout, 4, 50)
+    rowgap!(layout, 6, 50)
+    rowgap!(layout, 8, 100)
 
 
     on(slidergrid.sliders[1].value) do height
@@ -342,6 +359,12 @@ function setup_settings(scene::Scene, gui::GUI)
         gui.line_index = 0
         notify(gui.lines)
     end
+
+    on(closebutton.clicks) do _
+        gui.terminate = true
+    end
+
+
 end
 
 airdensity(height::Number) = 1.225 * exp(-0.11856 * height)

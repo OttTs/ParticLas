@@ -3,7 +3,7 @@ using GLMakie.GLFW
 using LinearAlgebra:norm, cross, dot
 using PoissonRandom:pois_rand
 using SpecialFunctions:erf
-using BenchmarkTools # TODO DELETE
+# using BenchmarkTools # TODO DELETE
 
 # Simulation parameters
 const MAX_N_PARTICLES = 100000

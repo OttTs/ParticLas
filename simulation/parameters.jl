@@ -12,11 +12,12 @@ end
 
 mutable struct GameState
     pause :: Bool
-    reset :: Bool
+    reset_particles :: Bool
+    reset_walls :: Bool
     terminate :: Bool
     collisions :: Bool
     wallcoeff :: Float64
-    GameState() = new(true, false, false, true, 0)
+    GameState() = new(true, false, false, false, true, 0)
 end
 
 

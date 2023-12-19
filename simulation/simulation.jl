@@ -39,9 +39,11 @@ function start_simulation_thread(
         end
         ID == 1 && get_gui_data(mesh, parameters, gui)
         synchronize(globsync)
-        if parameters.state.reset
+        if parameters.state.reset_particles
+            reset!(threads[ID]) # No synchronize needed since particles are proc local
+        end
+        if parameters.state.reset_walls
             ID == 1 && reset!(mesh)
-            reset!(threads[ID])
             synchronize(compsync)
         end
     end
@@ -50,7 +52,8 @@ end
 
 function get_gui_data(mesh, parameters, gui::GUI)
     parameters.state.pause = gui.pause
-    parameters.state.reset = gui.reset
+    parameters.state.reset_particles = gui.reset_particles
+    parameters.state.reset_walls = gui.reset_walls
     parameters.state.terminate = gui.terminate
     parameters.state.collisions = gui.toggle.active[]
     parameters.state.wallcoeff = gui.wallcoeff

@@ -12,6 +12,8 @@ if LANG_ENGLISH
     const STRING_DIFFUSE = "Diffuse"
     const STRING_REFLECTIVE = "Reflective"
     const STRING_VIEW = "View"
+    const STR_RESET_PRT = "Reset particles"
+    const STR_RESET_DRW = "Remove walls"
 else
     const STRING_HEIGHT = "Flughöhe"
     const STRING_PARTICLE = "Partikel"
@@ -24,6 +26,8 @@ else
     const STRING_DIFFUSE = "Diffus"
     const STRING_REFLECTIVE = "Reflektierend"
     const STRING_VIEW = "Darstellung"
+    const STR_RESET_PRT = "Reset Partikel"
+    const STR_RESET_DRW = "Wände löschen"
 end
 
 const STRING_PLAY = "Play"
@@ -57,7 +61,8 @@ mutable struct GUI
     cursor :: Bool
 
     pause :: Bool
-    reset :: Bool
+    reset_particles :: Bool
+    reset_walls :: Bool
     terminate :: Bool
     toggle :: Union{Nothing, Toggle}
     wallcoeff :: Float64
@@ -72,7 +77,7 @@ GUI(number_of_points::Number, number_of_cells::NTuple{2, Integer}, maximum_lines
     airdensity(DEFAULT_HEIGHT),
     DEFAULT_VELOCITY,
     (Point2{Float64}(NaN), Point2{Float64}(NaN)),
-    false, false, true, false, false,
+    false, false, true, false, false, false,
     nothing,
     0
 )
@@ -84,7 +89,7 @@ function setup(gui::GUI)
     setup_settings(scene, gui)
     resolution = setup_display(scene, gui)
 
-    screen = GLMakie.Screen(scene; start_renderloop=false)#focus_on_show=true, float=true, start_renderloop=false)
+    screen = GLMakie.Screen(scene; start_renderloop=false, focus_on_show=true)#, float=true, start_renderloop=false)
     glscreen = screen.glscreen
 
     on(events(scene).keyboardbutton) do button
@@ -102,6 +107,9 @@ function setup(gui::GUI)
 
     # Fullscreen
     GLFW.make_fullscreen!(glscreen)
+
+    # VSync
+    # GLFW.SwapInterval(1)
 
     return screen, resolution
 end
@@ -219,13 +227,27 @@ function setup_settings(scene::Scene, gui::GUI)
     area = Rect(floor(Int64, px * (1 - MENU_WIDTH)), 0, ceil(Int64, px * MENU_WIDTH), py)
 
     Box(scene, bbox=area, color=RGBf(0.8, 0.8, 0.8))
-    layout = GridLayout(scene, bbox=area)
+    layout = GridLayout(scene, bbox=area, valign= :top)
     layout.parent = scene
 
-    Label(layout[1,1], STRING_CONDITIONS, fontsize=20, halign=:left)
+    closebutton = Button(
+        layout[1, 1],
+        label = L"\mathbf{\times}",
+        fontsize = 24,
+        buttoncolor = RGBf(0.75, 0.75, 0.75),
+        buttoncolor_hover = RGBf(1., 0.4, 0.4),
+        buttoncolor_active = RGBf(1., 0.2, 0.2),
+        cornerradius = 4,
+        cornersegments = 10,
+        height = 50,
+        width = 50,
+        halign = :right
+    )
+
+    Label(layout[2,1], STRING_CONDITIONS, fontsize=20, halign=:left)
 
     slidergrid = SliderGrid(
-        layout[2,1],
+        layout[3,1],
         width=trunc(Int64, 0.95*px*MENU_WIDTH),
         (label = STRING_HEIGHT,
             range = 80:1:120,
@@ -238,33 +260,43 @@ function setup_settings(scene::Scene, gui::GUI)
             startvalue = DEFAULT_VELOCITY,
             linewidth=trunc(Int64, 0.02*py))
     )
+    # Font sizes of slidergrid (TODO different resolutions...)
+    # slidergrid.labels[1].fontsize[] = 16
+    # slidergrid.valuelabels[1].fontsize[] = 16
+    # slidergrid.labels[2].fontsize[] = 16
+    # slidergrid.valuelabels[2].fontsize[] = 16
 
     gui.toggle = Toggle(scene, active=true)
-    layout[3, 1] = grid!(hcat(Label(scene, STRING_DOCOLLISIONS), gui.toggle), halign=:left)
+    layout[4, 1] = grid!(hcat(Label(scene, STRING_DOCOLLISIONS), gui.toggle), halign=:left)
 
-    Label(layout[4,1], STRING_WALLINTERACTION, fontsize=20, halign=:left)
-    wallsg = SliderGrid(
-        layout[5,1],
-        width=trunc(Int64, 0.95*px*MENU_WIDTH),
-        (label = STRING_DIFFUSE,
-            range = 0:0.1:1,
-            format = STRING_REFLECTIVE,
-            startvalue = 0.5,
-            linewidth=trunc(Int64, 0.02*py))
-    )
+    Label(layout[5,1], STRING_WALLINTERACTION, fontsize=20, halign=:left)
+    sgl = layout[6,1] = GridLayout()
+    Label(sgl[1,1], STRING_DIFFUSE, fontsize=16)
+    wallsg = Slider(sgl[1,2], range=0:0.1:1, startvalue=0.5, linewidth=trunc(Int64, 0.02*py))
+    Label(sgl[1,3], STRING_REFLECTIVE, fontsize=16)
+    #wallsg = SliderGrid(
+    #    layout[6,1],
+    #    width=trunc(Int64, 0.95*px*MENU_WIDTH),
+    #    (label = STRING_DIFFUSE,
+    #        range = 0:0.1:1,
+    #        format = STRING_REFLECTIVE,
+    #        startvalue = 0.5,
+    #        linewidth=trunc(Int64, 0.02*py))
+    #)
 
-    Label(layout[6,1], STRING_VIEW, fontsize=20, halign=:left)
+    Label(layout[7,1], STRING_VIEW, fontsize=20, halign=:left)
 
     menu = Menu(
-        layout[7,1],
+        layout[8,1],
         dropdown_arrow_size = 20,
         options = [STRING_PARTICLE, STRING_DENSITY, STRING_VELOCITY, STRING_TEMPERATURE],
-        default = DEFAULT_VIEW
+        default = DEFAULT_VIEW,
+        fontsize = 16
     )
 
     buttonlabel = Observable(STRING_PLAY)
     playbutton = Button(
-        layout[8, 1],
+        layout[9, 1],
         label = buttonlabel,
         #buttoncolor = RGBf(0.2, 0.2, 0.2),
         #buttoncolor_hover = RGBf(0.2, 0.2, 0.2),
@@ -272,24 +304,44 @@ function setup_settings(scene::Scene, gui::GUI)
         cornerradius = 4,
         cornersegments = 10,
         height=50,
-        width=200
+        width=200,
+        fontsize = 16
     )
 
-    resetbutton =  Button(
-        layout[9, 1],
-        label = "Reset",
+    resetbutton_p =  Button(
+        layout[10, 1],
+        label = STR_RESET_PRT,
         buttoncolor = RGBf(1., 0.6, 0.6),
         buttoncolor_hover = RGBf(1., 0.8, 0.8),
         buttoncolor_active = RGBf(1., 0.2, 0.2),
         cornerradius = 4,
         cornersegments = 10,
         height=50,
-        width=200
+        width=200,
+        fontsize=16
     )
 
-    rowgap!(layout, 3, 50)
-    rowgap!(layout, 5, 50)
-    rowgap!(layout, 7, 100)
+    resetbutton_w =  Button(
+        layout[11, 1],
+        label = STR_RESET_DRW,
+        buttoncolor = RGBf(1., 0.6, 0.6),
+        buttoncolor_hover = RGBf(1., 0.8, 0.8),
+        buttoncolor_active = RGBf(1., 0.2, 0.2),
+        cornerradius = 4,
+        cornersegments = 10,
+        height=50,
+        width=200,
+        fontsize=16
+    )
+
+    rowgap!(layout, 1, 200)
+    rowgap!(layout, 4, 50)
+    rowgap!(layout, 6, 50)
+    rowgap!(layout, 8, 100)
+
+    on(closebutton.clicks) do _
+        gui.terminate = true
+    end
 
 
     on(slidergrid.sliders[1].value) do height
@@ -309,9 +361,11 @@ function setup_settings(scene::Scene, gui::GUI)
         end
     end
 
-    on(wallsg.sliders[1].value) do coefficient
+
+    on(wallsg.value) do coefficient
         gui.wallcoeff = coefficient
     end
+
 
     on(menu.selection) do selection
         gui.view[] = selection
@@ -324,13 +378,20 @@ function setup_settings(scene::Scene, gui::GUI)
         end
     end
 
+
     on(playbutton.clicks) do _
         gui.pause = !gui.pause
         buttonlabel[] = gui.pause ? STRING_PLAY : STRING_PAUSE
     end
 
-    on(resetbutton.clicks) do _
-        gui.reset = true
+
+    on(resetbutton_p.clicks) do _
+        gui.reset_particles = true
+    end
+
+
+    on(resetbutton_w.clicks) do _
+        gui.reset_walls = true
         gui.lines[] .= Point2f.(NaN)
         gui.line_index = 0
         notify(gui.lines)
@@ -367,7 +428,8 @@ function renderloop(
             synchronize(globsync)
 
             gui.new_wall = (Point2{Float64}(NaN), Point2{Float64}(NaN))
-            gui.reset = false
+            gui.reset_particles = false
+            gui.reset_walls = false
 
             while frametime(FPS) - starttime < 1; end
         catch e

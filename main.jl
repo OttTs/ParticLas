@@ -1,8 +1,12 @@
+module ParticLas
+
 using GLMakie
 using GLMakie.GLFW
 using LinearAlgebra:norm, cross, dot
 using PoissonRandom:pois_rand
 using SpecialFunctions:erf
+
+export run_particlas
 
 # Simulation parameters
 const MAX_N_PARTICLES = 100000
@@ -42,7 +46,8 @@ include("synchronization.jl")
 include("gui.jl")
 include("simulation/simulation.jl")
 
-function main()
+
+function run_particlas()
     # Setup GUI
     gui = GUI(MAX_N_PARTICLES, N_CELLS, MAX_N_LINES)
     screen, resolution = setup(gui)
@@ -75,4 +80,12 @@ function main()
 
 end
 
-main()
+
+function julia_main()::Cint
+    run_particlas()
+    return 0
+end
+
+end
+
+Main.ParticLas.run_particlas()

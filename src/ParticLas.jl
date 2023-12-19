@@ -87,5 +87,3 @@ function julia_main()::Cint
 end
 
 end
-
-Main.ParticLas.run_particlas()

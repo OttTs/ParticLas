@@ -76,9 +76,6 @@ function copy!(dst::Particle, src::Particle)
     dst.index = src.index
 end
 
-include("insertion.jl")
-include("movement.jl")
-
 function calculate_moments(thread::ComputationThread)
     for moment in thread.moments
         moment.∑v⁰ = 0

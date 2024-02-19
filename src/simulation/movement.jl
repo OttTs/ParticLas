@@ -91,7 +91,6 @@ function collide!(particle::Particle, wall, temperature, mass)
 end
 
 
-
 function isoutside(particle::Particle, mesh::SimulationMesh)
     ix, iy = particle.index
     nx, ny = mesh.n_cells

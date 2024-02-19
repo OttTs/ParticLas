@@ -18,12 +18,12 @@ Functions:
 struct Wall
     line :: Line
     normal :: Vec3{Float64}
-end
-function Wall(a, b)
-    line = Line(a, b - a)
-    length = √((b[1] - a[1])^2 + (b[2] - a[2])^2)
-    normal = Vec3{Float64}((a[2] - b[2]) / length, (b[1] - a[1]) / length, 0)
-    return Wall(line, normal)
+    function Wall(a::Point2{Float64}, b::Point2{Float64})
+        line = Line(a, b - a)
+        length = √((b[1] - a[1])^2 + (b[2] - a[2])^2)
+        normal = Vec3{Float64}((a[2] - b[2]) / length, (b[1] - a[1]) / length, 0)
+        return new(line, normal)
+    end
 end
 
 

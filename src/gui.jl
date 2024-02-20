@@ -1,6 +1,7 @@
 const LANG_ENGLISH = true # Set true to use english labels, otherwise german
 
 if LANG_ENGLISH
+    const STRING_ParticLas = "ParticLas"
     const STRING_HEIGHT = "Height"
     const STRING_PARTICLE = "Particles"
     const STRING_VELOCITY = "Velocity"
@@ -15,6 +16,7 @@ if LANG_ENGLISH
     const STR_RESET_PRT = "Reset particles"
     const STR_RESET_DRW = "Remove walls"
 else
+    const STRING_ParticLas = "ParticLas"
     const STRING_HEIGHT = "Flughöhe"
     const STRING_PARTICLE = "Partikel"
     const STRING_VELOCITY = "Geschwindigkeit"
@@ -224,10 +226,11 @@ end
 
 function setup_settings(scene::Scene, gui::GUI)
     px, py = 2 .* GLFW.standard_screen_resolution()
-    area = Rect(floor(Int64, px * (1 - MENU_WIDTH)), 0, ceil(Int64, px * MENU_WIDTH), py)
+    area_box = Rect(floor(Int64, px * (1 - MENU_WIDTH)), 0.01 * py, 0.98 * ceil(Int64, px * MENU_WIDTH), 0.98 * py)
+    area_text = Rect(floor(Int64, px * (1 - (0.89 * MENU_WIDTH))), 0.02 * py, ceil(Int64, px * (0.75 * MENU_WIDTH)), 0.96 * py)
 
-    Box(scene, bbox=area, color=RGBf(0.8, 0.8, 0.8))
-    layout = GridLayout(scene, bbox=area, valign= :top)
+    Box(scene, bbox=area_box, color=RGBf(0.745, 0.804, 0.871), cornerradius = 60, strokewidth = 0)
+    layout = GridLayout(scene, bbox=area_text, valign= :top)
     layout.parent = scene
 
     closebutton = Button(
@@ -235,47 +238,56 @@ function setup_settings(scene::Scene, gui::GUI)
         label = L"\mathbf{\times}",
         fontsize = 24,
         buttoncolor = RGBf(0.75, 0.75, 0.75),
-        buttoncolor_hover = RGBf(1., 0.4, 0.4),
+        buttoncolor_hover = RGBf(0.97, 0.278, 0.298),
         buttoncolor_active = RGBf(1., 0.2, 0.2),
-        cornerradius = 4,
-        cornersegments = 10,
-        height = 50,
-        width = 50,
+        cornerradius = 15,
+        cornersegments = 15,
+        height = 30,
+        width = 30,
         halign = :right
     )
 
-    Label(layout[2,1], STRING_CONDITIONS, fontsize=20, halign=:left)
+    axis = Axis(layout[2,1], aspect = nothing)
+    img = load("particlas_logo_round.png")
+    hidedecorations!(axis)  # hides ticks, grid and lables    
+    hidespines!(axis)  # hide the frame
+    image!(axis, rotr90(img))
 
+
+    # collisions
+    gui.toggle = Toggle(scene, active=true)
+    layout[3, 1] = grid!(hcat(Label(scene, STRING_DOCOLLISIONS, fontsize=20, halign=:left), gui.toggle), halign=:left)
+
+    # Slider Height Velocity
     slidergrid = SliderGrid(
-        layout[3,1],
-        width=trunc(Int64, 0.95*px*MENU_WIDTH),
+        layout[4,1],
+        width=trunc(Int64, 0.9*px*MENU_WIDTH),
         (label = STRING_HEIGHT,
             range = 80:1:120,
             format = "",
             startvalue = DEFAULT_HEIGHT,
-            linewidth=trunc(Int64, 0.02*py)),
+            linewidth=trunc(Int64, 0.01*py)),
         (label = STRING_VELOCITY,
             range = 1000:10:20000,
             format = "",
             startvalue = DEFAULT_VELOCITY,
-            linewidth=trunc(Int64, 0.02*py))
+            linewidth=trunc(Int64, 0.01*py))
     )
     # Font sizes of slidergrid (TODO different resolutions...)
-    # slidergrid.labels[1].fontsize[] = 16
+    slidergrid.labels[1].fontsize[] = 20
     # slidergrid.valuelabels[1].fontsize[] = 16
-    # slidergrid.labels[2].fontsize[] = 16
+    slidergrid.labels[2].fontsize[] = 20
     # slidergrid.valuelabels[2].fontsize[] = 16
 
-    gui.toggle = Toggle(scene, active=true)
-    layout[4, 1] = grid!(hcat(Label(scene, STRING_DOCOLLISIONS), gui.toggle), halign=:left)
+
 
     Label(layout[5,1], STRING_WALLINTERACTION, fontsize=20, halign=:left)
     sgl = layout[6,1] = GridLayout()
     Label(sgl[1,1], STRING_DIFFUSE, fontsize=16)
-    wallsg = Slider(sgl[1,2], range=0:0.1:1, startvalue=0.5, linewidth=trunc(Int64, 0.02*py))
+    wallsg = Slider(sgl[1,2], range=0:0.1:1, startvalue=0.5, linewidth=trunc(Int64, 0.01*py))
     Label(sgl[1,3], STRING_REFLECTIVE, fontsize=16)
     #wallsg = SliderGrid(
-    #    layout[6,1],
+    #    layout[7,1],
     #    width=trunc(Int64, 0.95*px*MENU_WIDTH),
     #    (label = STRING_DIFFUSE,
     #        range = 0:0.1:1,
@@ -287,57 +299,62 @@ function setup_settings(scene::Scene, gui::GUI)
     Label(layout[7,1], STRING_VIEW, fontsize=20, halign=:left)
 
     menu = Menu(
-        layout[8,1],
+        layout[7,1],
         dropdown_arrow_size = 20,
         options = [STRING_PARTICLE, STRING_DENSITY, STRING_VELOCITY, STRING_TEMPERATURE],
         default = DEFAULT_VIEW,
-        fontsize = 16
+        fontsize = 16,
+        width = 150
     )
 
     buttonlabel = Observable(STRING_PLAY)
     playbutton = Button(
-        layout[9, 1],
+        layout[8, 1],
         label = buttonlabel,
-        #buttoncolor = RGBf(0.2, 0.2, 0.2),
-        #buttoncolor_hover = RGBf(0.2, 0.2, 0.2),
+        buttoncolor = RGBf(0.49, 1., 0.733),
+        buttoncolor_hover = RGBf(0.788, 0.988, 0.851),
         #buttoncolor_active = RGBf(0.2, 0.2, 0.2),
-        cornerradius = 4,
+        cornerradius = 15,
         cornersegments = 10,
-        height=50,
-        width=200,
+        height=30,
+        width=150,
         fontsize = 16
     )
 
     resetbutton_p =  Button(
-        layout[10, 1],
+        layout[9, 1],
         label = STR_RESET_PRT,
-        buttoncolor = RGBf(1., 0.6, 0.6),
+        buttoncolor = RGBf(0.97, 0.278, 0.298),
         buttoncolor_hover = RGBf(1., 0.8, 0.8),
         buttoncolor_active = RGBf(1., 0.2, 0.2),
-        cornerradius = 4,
+        cornerradius = 15,
         cornersegments = 10,
-        height=50,
-        width=200,
+        height=30,
+        width=150,
         fontsize=16
     )
 
     resetbutton_w =  Button(
-        layout[11, 1],
+        layout[10, 1],
         label = STR_RESET_DRW,
-        buttoncolor = RGBf(1., 0.6, 0.6),
+        buttoncolor = RGBf(0.97, 0.278, 0.298),
         buttoncolor_hover = RGBf(1., 0.8, 0.8),
         buttoncolor_active = RGBf(1., 0.2, 0.2),
-        cornerradius = 4,
+        cornerradius = 15,
         cornersegments = 10,
-        height=50,
-        width=200,
+        height=30,
+        width=150,
         fontsize=16
     )
 
-    rowgap!(layout, 1, 200)
-    rowgap!(layout, 4, 50)
-    rowgap!(layout, 6, 50)
-    rowgap!(layout, 8, 100)
+    rowgap!(layout, 1, 0)
+    rowgap!(layout, 2, 100)
+    rowgap!(layout, 3, 25)
+    rowgap!(layout, 4, 25)
+    rowgap!(layout, 5, 25)
+    rowgap!(layout, 6, 25)
+    rowgap!(layout, 7, 400)
+
 
     on(closebutton.clicks) do _
         gui.terminate = true
@@ -396,6 +413,11 @@ function setup_settings(scene::Scene, gui::GUI)
         gui.line_index = 0
         notify(gui.lines)
     end
+
+    on(closebutton.clicks) do _
+        gui.terminate = true
+    end
+
 end
 
 airdensity(height::Number) = 1.225 * exp(-0.11856 * height)

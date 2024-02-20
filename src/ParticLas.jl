@@ -5,6 +5,7 @@ using GLMakie.GLFW
 using LinearAlgebra:norm, cross, dot
 using PoissonRandom:pois_rand
 using SpecialFunctions:erf
+using FileIO
 
 export run_particlas
 
